@@ -1,0 +1,11 @@
+using './products.module.bicep'
+
+param appsvc_outputs_azure_container_registry_endpoint = '{{ .Env.APPSVC_AZURE_CONTAINER_REGISTRY_ENDPOINT }}'
+param appsvc_outputs_azure_container_registry_managed_identity_client_id = '{{ .Env.APPSVC_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_CLIENT_ID }}'
+param appsvc_outputs_azure_container_registry_managed_identity_id = '{{ .Env.APPSVC_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}'
+param appsvc_outputs_planid = '{{ .Env.APPSVC_PLANID }}'
+param openai_outputs_endpoint = '{{ .Env.OPENAI_ENDPOINT }}'
+param products_containerimage = '{{ .Image }}'
+param products_containerport = '{{ targetPortOrDefault 8080 }}'
+param products_identity_outputs_clientid = '{{ .Env.PRODUCTS_IDENTITY_CLIENTID }}'
+param products_identity_outputs_id = '{{ .Env.PRODUCTS_IDENTITY_ID }}'
