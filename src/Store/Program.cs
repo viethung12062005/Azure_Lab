@@ -10,8 +10,19 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<ICheckoutService, CheckoutService>();
 
+var productServiceBaseAddress = builder.Configuration["ProductService:BaseAddress"]
+    ?? builder.Configuration["ProductEndpoint"]
+    ?? string.Empty;
+
+if (string.IsNullOrWhiteSpace(productServiceBaseAddress))
+{
+    throw new InvalidOperationException(
+        "Product service base address is missing. Configure ProductService:BaseAddress (or ProductEndpoint)."
+    );
+}
+
 builder.Services.AddHttpClient<IProductService, ProductService>(
-    static client => client.BaseAddress = new("https+http://products"));
+    client => client.BaseAddress = new Uri(productServiceBaseAddress));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -33,6 +44,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()

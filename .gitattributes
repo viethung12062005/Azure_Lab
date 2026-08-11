@@ -1,0 +1,46 @@
+# Normalize text files in the repository
+* text=auto
+
+# Default to LF for cross-platform consistency (CI, containers, Linux hosts)
+*.cs text eol=lf diff=csharp
+*.csproj text eol=lf
+*.sln text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+*.config text eol=lf
+*.editorconfig text eol=lf
+
+# Scripts: keep platform-appropriate line endings
+*.sh text eol=lf
+*.bash text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Container and gateway config
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+*.conf text eol=lf
+*.nginx text eol=lf
+
+# Treat common artifacts as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.dll binary
+*.exe binary
+*.so binary
+*.dylib binary
+*.pdb binary

@@ -75,6 +75,11 @@ public static class ProductEndpoints
         group.MapGet("/search/{search}", ProductApiActions.SearchAllProducts)
             .WithName("SearchAllProducts")
             .Produces<List<Product>>(StatusCodes.Status200OK);
+        
+        group.MapPost("/images", ProductApiActions.UploadImageAsync)
+             .AllowAnonymous()
+             .DisableAntiforgery() 
+             .WithName("UploadProductImage");
 
         #region AI Search Endpoint
         routes.MapGet("/api/aisearch/{search}", ProductAiActions.AISearch)

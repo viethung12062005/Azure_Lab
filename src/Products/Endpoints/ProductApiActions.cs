@@ -3,7 +3,9 @@ using DataEntities;
 using Products.Models;
 using SearchEntities;
 using Microsoft.AspNetCore.Http;
-using Products.Models;
+using Microsoft.AspNetCore.Mvc;
+using Azure.Storage.Blobs;
+
 
 namespace Products.Endpoints;
 
@@ -61,5 +63,26 @@ public static class ProductApiActions
             $"{products.Count} Products found for [{search}]" :
             $"No products found for [{search}]";
         return Results.Ok(response);
+    }
+
+    public static async Task<IResult> UploadImageAsync(
+        IFormFile file,
+        BlobServiceClient blobServiceClient)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest("File không hợp lệ hoặc bị trống.");
+        }
+
+        string containerName = "product-images";
+        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+        string uniqueFileName = $"{Guid.NewGuid()}-{file.FileName}";
+        var blobClient = containerClient.GetBlobClient(uniqueFileName);
+
+        using var stream = file.OpenReadStream();
+        await blobClient.UploadAsync(stream, overwrite: true);
+
+        return Results.Ok(new { ImageUrl = blobClient.Uri.ToString() });
     }
 }
