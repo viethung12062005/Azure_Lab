@@ -9,19 +9,12 @@
 
 
 	<ItemGroup>
-    <Compile Remove="Data\**" />
     <Compile Remove="Memory\**" />
-    <Content Remove="Data\**" />
     <Content Remove="Memory\**" />
-    <EmbeddedResource Remove="Data\**" />
     <EmbeddedResource Remove="Memory\**" />
-    <None Remove="Data\**" />
     <None Remove="Memory\**" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="Database.db" />
-    <None Remove="Database.db-shm" />
-    <None Remove="Database.db-wal" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Memory\MemoryContext.cs" />
@@ -31,7 +24,11 @@
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
 	  <PackageReference Include="CommunityToolkit.VectorData.InMemory" Version="1.0.0-preview.3" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

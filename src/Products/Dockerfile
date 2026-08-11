@@ -25,7 +25,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Ép .NET chạy thẳng trực tiếp ở cổng 80 để khớp hoàn toàn với Azure
 ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
 

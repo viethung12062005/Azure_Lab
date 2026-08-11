@@ -17,9 +17,22 @@ Environment.SetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT", "fal
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
-// Add DbContext service (SQLite - preserving App Service deployment data)
+var connectionString = builder.Configuration.GetConnectionString("ProductsContext");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Products;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+    }
+    else
+    {
+        throw new InvalidOperationException("Connection string 'ProductsContext' not found.");
+    }
+}
+
+// Add DbContext service (SQL Server for production; localdb fallback only for development)
 builder.Services.AddDbContext<Context>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("ProductsContext") ?? throw new InvalidOperationException("Connection string 'ProductsContext' not found.")));
+    options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 // Read explicit Azure OpenAI parameters wired from AppHost.
 // In run mode these come from the Aspire parameters (user-secrets in eShopAppHost).
@@ -108,8 +121,8 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<Context>();
     try
     {
-        app.Logger.LogInformation("Ensure database created");
-        context.Database.EnsureCreated();
+        app.Logger.LogInformation("Apply database migrations");
+        context.Database.Migrate();
     }
     catch (Exception exc)
     {

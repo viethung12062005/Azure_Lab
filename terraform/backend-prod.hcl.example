@@ -1,0 +1,7 @@
+resource_group_name  = "rg-eshoplite-tfstate-prod-01"
+storage_account_name = "steshoplitetfstate01"
+container_name       = "tfstate"
+key                  = "prod.terraform.tfstate"
+use_azuread_auth     = true
+subscription_id      = "<your-subscription-id>"
+tenant_id            = "<your-tenant-id>"
