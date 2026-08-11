@@ -5,7 +5,11 @@ param(
     [string]$GitHubOrg,
     [Parameter(Mandatory = $true)]
     [string]$GitHubRepo,
-    [string]$SubscriptionId
+    [string]$SubscriptionId,
+    [Parameter(Mandatory = $true)]
+    [string]$TerraformStateResourceGroup,
+    [Parameter(Mandatory = $true)]
+    [string]$TerraformStateStorageAccount
 )
 
 # One-time setup: creates an Azure AD app registration + service principal with
@@ -77,6 +81,13 @@ az role assignment create --assignee $appId --role 'Contributor' --scope $scope 
 Write-Host "Assigning 'Role Based Access Control Administrator' at $scope..."
 az role assignment create --assignee $appId --role 'Role Based Access Control Administrator' --scope $scope | Out-Null
 
+# Contributor/RBAC Administrator only cover control-plane + role-assignment
+# management actions; the azurerm backend's use_azuread_auth reads/writes the
+# state blob through the storage *data* plane, which needs its own RBAC role.
+$stateScope = "/subscriptions/$subscriptionId/resourceGroups/$TerraformStateResourceGroup/providers/Microsoft.Storage/storageAccounts/$TerraformStateStorageAccount"
+Write-Host "Assigning 'Storage Blob Data Contributor' at $stateScope..."
+az role assignment create --assignee $appId --role 'Storage Blob Data Contributor' --scope $stateScope | Out-Null
+
 Write-Host ''
 Write-Host 'GitHub OIDC bootstrap completed.'
 Write-Host ''
@@ -84,8 +95,8 @@ Write-Host 'Add these as repository-level Variables (Settings > Secrets and vari
 Write-Host "  AZURE_CLIENT_ID       = $appId"
 Write-Host "  AZURE_TENANT_ID       = $tenantId"
 Write-Host "  AZURE_SUBSCRIPTION_ID = $subscriptionId"
-Write-Host "  TF_STATE_RESOURCE_GROUP  = <resource group from bootstrap-terraform-state.ps1>"
-Write-Host "  TF_STATE_STORAGE_ACCOUNT = <storage account from bootstrap-terraform-state.ps1>"
+Write-Host "  TF_STATE_RESOURCE_GROUP  = $TerraformStateResourceGroup"
+Write-Host "  TF_STATE_STORAGE_ACCOUNT = $TerraformStateStorageAccount"
 Write-Host ''
 Write-Host 'Also create GitHub Environments named dev, uat, prod (Settings > Environments) and'
 Write-Host 'add required reviewers on uat and prod so terraform apply pauses for approval.'
