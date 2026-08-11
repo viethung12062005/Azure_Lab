@@ -64,7 +64,12 @@ variable "containerapps_environment_name" {
 
 variable "openai_account_name" {
   type        = string
-  description = "Azure OpenAI (Cognitive Services) account name."
+  description = "Name of the existing Azure OpenAI (Cognitive Services) account to deploy models into (shared across environments due to subscription account quota)."
+}
+
+variable "openai_resource_group_name" {
+  type        = string
+  description = "Resource group of the existing Azure OpenAI account."
 }
 
 variable "openai_chat_deployment_name" {

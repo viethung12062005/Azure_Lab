@@ -39,11 +39,11 @@ output "containerapps_environment_id" {
 }
 
 output "openai_id" {
-  value = azurerm_cognitive_account.openai.id
+  value = data.azurerm_cognitive_account.openai.id
 }
 
 output "openai_endpoint" {
-  value = azurerm_cognitive_account.openai.endpoint
+  value = data.azurerm_cognitive_account.openai.endpoint
 }
 
 output "openai_chat_deployment_name" {

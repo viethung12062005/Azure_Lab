@@ -51,7 +51,6 @@ resource "azurerm_mssql_database" "main" {
   name                        = var.sql_database_name
   server_id                   = azurerm_mssql_server.main.id
   sku_name                    = var.sql_database_sku_name
-  license_type                = "LicenseIncluded"
   auto_pause_delay_in_minutes = var.sql_auto_pause_delay_in_minutes
   min_capacity                = var.sql_min_capacity
   tags                        = merge(var.tags, { BackupRequired = "true" })
@@ -72,21 +71,19 @@ resource "azurerm_container_app_environment" "main" {
   tags                       = var.tags
 }
 
-resource "azurerm_cognitive_account" "openai" {
-  name                          = var.openai_account_name
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.main.name
-  kind                          = "OpenAI"
-  sku_name                      = "S0"
-  custom_subdomain_name         = var.openai_account_name
-  public_network_access_enabled = true
-  local_auth_enabled            = false
-  tags                          = var.tags
+# Azure for Students subscriptions carry a very low quota on the number of
+# Cognitive Services/OpenAI *accounts* (observed: creating a second one fails
+# with InsufficientQuota even though the subscription has spare deployment
+# capacity). Reuse the existing account instead of provisioning a new one per
+# environment; only the two model deployments are managed by Terraform.
+data "azurerm_cognitive_account" "openai" {
+  name                = var.openai_account_name
+  resource_group_name = var.openai_resource_group_name
 }
 
 resource "azurerm_cognitive_deployment" "chat" {
   name                 = var.openai_chat_deployment_name
-  cognitive_account_id = azurerm_cognitive_account.openai.id
+  cognitive_account_id = data.azurerm_cognitive_account.openai.id
 
   model {
     format  = "OpenAI"
@@ -102,7 +99,7 @@ resource "azurerm_cognitive_deployment" "chat" {
 
 resource "azurerm_cognitive_deployment" "embeddings" {
   name                 = var.openai_embeddings_deployment_name
-  cognitive_account_id = azurerm_cognitive_account.openai.id
+  cognitive_account_id = data.azurerm_cognitive_account.openai.id
 
   model {
     format  = "OpenAI"
@@ -133,6 +130,6 @@ resource "azurerm_storage_account" "products" {
 
 resource "azurerm_storage_container" "product_images" {
   name                  = var.storage_container_name
-  storage_account_name  = azurerm_storage_account.products.name
+  storage_account_id    = azurerm_storage_account.products.id
   container_access_type = "private"
 }

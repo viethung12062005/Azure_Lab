@@ -14,6 +14,7 @@ module "core" {
   sql_admin_password             = random_password.sql_admin.result
   containerapps_environment_name = var.containerapps_environment_name
   openai_account_name            = var.openai_account_name
+  openai_resource_group_name     = var.openai_resource_group_name
   storage_account_name           = var.storage_account_name
 }
 
@@ -96,7 +97,7 @@ module "products_app" {
   }
   key_vault_secret_refs = {
     products-context-connection-string = {
-      key_vault_secret_id = azurerm_key_vault_secret.products_connection_string.resource_versionless_id
+      key_vault_secret_id = azurerm_key_vault_secret.products_connection_string.versionless_id
       identity            = module.identities.products_managed_identity_id
     }
   }

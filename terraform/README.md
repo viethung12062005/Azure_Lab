@@ -28,7 +28,7 @@ Each environment should keep the same architecture and the same tagging contract
 
 ## Recommended region strategy
 
-Start with one region across all environments to keep cost and operational complexity low. Preferred candidates are `southeastasia`, `japaneast`, and `eastasia`, in that order, subject to service availability in the portal for the student subscription.
+Start with one region across all environments to keep cost and operational complexity low. Check the subscription's `sys.regionrestriction` policy assignment first — Azure for Students subscriptions are often locked to a specific allowlist. For this project's subscription the allowlist is `japaneast`, `japanwest`, `koreacentral`, `centralindia`, `uaenorth`, so all environments use `japaneast` (see [Azure for Students Constraints](../docs/azure-students-constraints.md)).
 
 ## Bootstrap order
 
