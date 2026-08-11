@@ -29,14 +29,25 @@ $appId = az ad app create --display-name $AppDisplayName --query appId -o tsv
 Write-Host "Creating service principal for app $appId..."
 az ad sp create --id $appId | Out-Null
 
+# GitHub's OIDC "sub" claim embeds the immutable numeric owner/repo IDs
+# (repo:{owner}@{ownerId}/{repo}@{repoId}:...) so a federated credential
+# written as plain "repo:owner/repo:..." silently stops matching and fails
+# with AADSTS700213. Resolve the current IDs from the GitHub API so the
+# credential always matches what GitHub actually issues.
+Write-Host "Resolving GitHub owner/repo IDs for ${GitHubOrg}/${GitHubRepo}..."
+$ownerId = (Invoke-RestMethod -Uri "https://api.github.com/users/$GitHubOrg" -Headers @{ 'User-Agent' = 'bootstrap-github-oidc' }).id
+$repoId = (Invoke-RestMethod -Uri "https://api.github.com/repos/$GitHubOrg/$GitHubRepo" -Headers @{ 'User-Agent' = 'bootstrap-github-oidc' }).id
+$repoSlug = "${GitHubOrg}@${ownerId}/${GitHubRepo}@${repoId}"
+Write-Host "Resolved subject prefix: repo:$repoSlug"
+
 # One federated credential per GitHub Environment (dev/uat/prod) so a token minted
 # for one environment cannot be used to authenticate as another, plus one for
 # plain pushes to main (used by the read-only CI plan job).
 $subjects = @(
-    "repo:${GitHubOrg}/${GitHubRepo}:environment:dev",
-    "repo:${GitHubOrg}/${GitHubRepo}:environment:uat",
-    "repo:${GitHubOrg}/${GitHubRepo}:environment:prod",
-    "repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main"
+    "repo:${repoSlug}:environment:dev",
+    "repo:${repoSlug}:environment:uat",
+    "repo:${repoSlug}:environment:prod",
+    "repo:${repoSlug}:ref:refs/heads/main"
 )
 
 foreach ($subject in $subjects) {
