@@ -88,6 +88,13 @@ $stateScope = "/subscriptions/$subscriptionId/resourceGroups/$TerraformStateReso
 Write-Host "Assigning 'Storage Blob Data Contributor' at $stateScope..."
 az role assignment create --assignee $appId --role 'Storage Blob Data Contributor' --scope $stateScope | Out-Null
 
+# terraform plan/apply also refreshes azurerm_key_vault_secret.products_connection_string,
+# which reads the secret's current value through Key Vault's own data-plane RBAC (separate
+# from Contributor). Each environment's Key Vault is created by Terraform itself, so there's
+# no fixed vault name to scope to ahead of time; grant this subscription-wide like Contributor.
+Write-Host "Assigning 'Key Vault Secrets Officer' at $scope..."
+az role assignment create --assignee $appId --role 'Key Vault Secrets Officer' --scope $scope | Out-Null
+
 Write-Host ''
 Write-Host 'GitHub OIDC bootstrap completed.'
 Write-Host ''
