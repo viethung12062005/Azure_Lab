@@ -18,6 +18,8 @@ sql_database_name               = "sqldb-eshoplite-uat-01"
 containerapps_environment_name  = "cae-eshoplite-uat-01"
 store_managed_identity_name     = "uai-eshoplite-store-uat-01"
 products_managed_identity_name  = "uai-eshoplite-products-uat-01"
+openai_account_name             = "openai-eshoplite-uat-01"
+storage_account_name            = "steshopliteuat01"
 
 sql_admin_username = "sqladminuser"
 

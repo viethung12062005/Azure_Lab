@@ -1,0 +1,169 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        options: [dev, uat, prod]
+        default: dev
+      image_tag:
+        description: "Image tag to build and deploy (defaults to the short commit SHA)"
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+
+jobs:
+  resolve:
+    name: Resolve environment and image tag
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+    steps:
+      - id: resolve
+        run: |
+          environment="${{ inputs.environment }}"
+          if [ -z "$environment" ]; then environment="dev"; fi
+          image_tag="${{ inputs.image_tag }}"
+          if [ -z "$image_tag" ]; then image_tag="${GITHUB_SHA::7}"; fi
+          echo "environment=$environment" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$image_tag" >> "$GITHUB_OUTPUT"
+
+  # Only reads Terraform state/outputs (e.g. ACR login server). Never applies changes,
+  # so it is safe to run before we know whether the build even succeeds.
+  read-infra-outputs:
+    name: Read Terraform outputs
+    runs-on: ubuntu-latest
+    needs: resolve
+    environment: ${{ needs.resolve.outputs.environment }}
+    outputs:
+      acr_login_server: ${{ steps.outputs.outputs.acr_login_server }}
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ needs.resolve.outputs.environment }}.terraform.tfstate" \
+            -backend-config="subscription_id=${{ vars.AZURE_SUBSCRIPTION_ID }}" \
+            -backend-config="tenant_id=${{ vars.AZURE_TENANT_ID }}" \
+            -backend-config="client_id=${{ vars.AZURE_CLIENT_ID }}" \
+            -backend-config="use_azuread_auth=true" \
+            -backend-config="use_oidc=true"
+
+      - id: outputs
+        name: Read acr_login_server output
+        run: echo "acr_login_server=$(terraform output -raw acr_login_server)" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    needs: [resolve, read-infra-outputs]
+    environment: ${{ needs.resolve.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: |
+          acr_name="${{ needs.read-infra-outputs.outputs.acr_login_server }}"
+          az acr login --name "${acr_name%%.*}"
+
+      - name: Build and push Products image
+        run: |
+          tag="${{ needs.read-infra-outputs.outputs.acr_login_server }}/products:${{ needs.resolve.outputs.image_tag }}"
+          docker build -f src/Products/Dockerfile -t "$tag" src
+          docker push "$tag"
+
+      - name: Build and push Store image
+        run: |
+          tag="${{ needs.read-infra-outputs.outputs.acr_login_server }}/store:${{ needs.resolve.outputs.image_tag }}"
+          docker build -f src/Store/Dockerfile -t "$tag" src
+          docker push "$tag"
+
+  deploy-infra:
+    name: Terraform apply
+    runs-on: ubuntu-latest
+    needs: [resolve, build-and-push]
+    environment: ${{ needs.resolve.outputs.environment }}
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ needs.resolve.outputs.environment }}.terraform.tfstate" \
+            -backend-config="subscription_id=${{ vars.AZURE_SUBSCRIPTION_ID }}" \
+            -backend-config="tenant_id=${{ vars.AZURE_TENANT_ID }}" \
+            -backend-config="client_id=${{ vars.AZURE_CLIENT_ID }}" \
+            -backend-config="use_azuread_auth=true" \
+            -backend-config="use_oidc=true"
+
+      - name: Terraform apply (updates Container App image tags)
+        run: |
+          terraform apply -auto-approve \
+            -var-file="environments/${{ needs.resolve.outputs.environment }}.tfvars" \
+            -var="products_image_tag=${{ needs.resolve.outputs.image_tag }}" \
+            -var="store_image_tag=${{ needs.resolve.outputs.image_tag }}"
+
+      - name: Show outputs
+        run: terraform output

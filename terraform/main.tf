@@ -13,6 +13,8 @@ module "core" {
   sql_admin_username             = var.sql_admin_username
   sql_admin_password             = random_password.sql_admin.result
   containerapps_environment_name = var.containerapps_environment_name
+  openai_account_name            = var.openai_account_name
+  storage_account_name           = var.storage_account_name
 }
 
 module "identities" {
@@ -44,6 +46,18 @@ resource "azurerm_role_assignment" "products_key_vault_secrets_user" {
   principal_id         = module.identities.products_managed_identity_principal_id
 }
 
+resource "azurerm_role_assignment" "products_cognitive_services_openai_user" {
+  scope                = module.core.openai_id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = module.identities.products_managed_identity_principal_id
+}
+
+resource "azurerm_role_assignment" "products_storage_blob_data_contributor" {
+  scope                = module.core.storage_account_id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = module.identities.products_managed_identity_principal_id
+}
+
 resource "azurerm_key_vault_secret" "products_connection_string" {
   name         = "products-context-connection-string"
   value        = "Server=tcp:${module.core.sql_server_fqdn},1433;Initial Catalog=${module.core.sql_database_name};Persist Security Info=False;User ID=${var.sql_admin_username};Password=${random_password.sql_admin.result};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
@@ -70,10 +84,10 @@ module "products_app" {
   environment_variables = merge(
     {
       ASPNETCORE_ENVIRONMENT              = var.environment
-      AzureOpenAIEndpoint                 = try(var.products_environment_variables["AzureOpenAIEndpoint"], "")
-      AzureOpenAIDeploymentName           = try(var.products_environment_variables["AzureOpenAIDeploymentName"], "gpt-41-mini")
-      AzureOpenAIEmbeddingsDeploymentName = try(var.products_environment_variables["AzureOpenAIEmbeddingsDeploymentName"], "text-embedding-ada-002")
-      AzureBlobStorageEndpoint            = try(var.products_environment_variables["AzureBlobStorageEndpoint"], "")
+      AzureOpenAIEndpoint                 = module.core.openai_endpoint
+      AzureOpenAIDeploymentName           = module.core.openai_chat_deployment_name
+      AzureOpenAIEmbeddingsDeploymentName = module.core.openai_embeddings_deployment_name
+      AzureBlobStorageEndpoint            = module.core.storage_primary_blob_endpoint
     },
     var.products_environment_variables,
   )
@@ -90,6 +104,8 @@ module "products_app" {
 
   depends_on = [
     azurerm_role_assignment.products_key_vault_secrets_user,
+    azurerm_role_assignment.products_cognitive_services_openai_user,
+    azurerm_role_assignment.products_storage_blob_data_contributor,
     azurerm_key_vault_secret.products_connection_string,
   ]
 }

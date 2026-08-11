@@ -37,3 +37,35 @@ output "sql_database_name" {
 output "containerapps_environment_id" {
   value = azurerm_container_app_environment.main.id
 }
+
+output "openai_id" {
+  value = azurerm_cognitive_account.openai.id
+}
+
+output "openai_endpoint" {
+  value = azurerm_cognitive_account.openai.endpoint
+}
+
+output "openai_chat_deployment_name" {
+  value = azurerm_cognitive_deployment.chat.name
+}
+
+output "openai_embeddings_deployment_name" {
+  value = azurerm_cognitive_deployment.embeddings.name
+}
+
+output "storage_account_id" {
+  value = azurerm_storage_account.products.id
+}
+
+output "storage_account_name" {
+  value = azurerm_storage_account.products.name
+}
+
+output "storage_primary_blob_endpoint" {
+  value = azurerm_storage_account.products.primary_blob_endpoint
+}
+
+output "storage_container_name" {
+  value = azurerm_storage_container.product_images.name
+}

@@ -10,9 +10,11 @@ This folder contains the Phase 1 Azure foundation for the eShopLite workload.
 - Azure Key Vault
 - Azure SQL logical server and serverless database
 - Azure Container Apps Environment
+- Azure OpenAI account (kind `OpenAI`, local auth disabled) with `gpt-41-mini` and `text-embedding-ada-002` deployments
+- Storage Account with a private `product-images` blob container
 - User-assigned identities for Store and Products
-- ACR pull role assignments for both identities
-- Module placeholders for future Store and Products Container Apps deployment
+- Role assignments for both identities: ACR pull, Key Vault Secrets User, Cognitive Services OpenAI User, Storage Blob Data Contributor
+- Store and Products Container Apps, wired to Key Vault secrets and to the Azure OpenAI/Storage endpoints via environment variables
 
 ## Environment model
 

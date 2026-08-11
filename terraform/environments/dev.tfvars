@@ -1,0 +1,28 @@
+project_name = "eShopLite"
+environment  = "dev"
+location     = "southeastasia"
+
+owner       = "viethung12062005"
+cost_center = "azure-students"
+repository  = "viethung12062005/Azure_Lab"
+
+criticality         = "medium"
+data_classification = "internal"
+
+resource_group_name            = "rg-eshoplite-dev-sea"
+acr_name                       = "acreshoplitedev01"
+log_analytics_workspace_name   = "law-eshoplite-dev-01"
+key_vault_name                 = "kv-eshoplite-dev-01"
+sql_server_name                = "sql-eshoplite-dev-01"
+sql_database_name              = "sqldb-eshoplite-dev-01"
+containerapps_environment_name = "cae-eshoplite-dev-01"
+store_managed_identity_name    = "uai-eshoplite-store-dev-01"
+products_managed_identity_name = "uai-eshoplite-products-dev-01"
+openai_account_name            = "openai-eshoplite-dev-01"
+storage_account_name           = "steshoplitedev01"
+
+sql_admin_username = "sqladminuser"
+
+additional_tags = {
+  ReleaseTrack = "development"
+}

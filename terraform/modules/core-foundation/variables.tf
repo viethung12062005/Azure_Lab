@@ -61,3 +61,58 @@ variable "sql_admin_password" {
 variable "containerapps_environment_name" {
   type = string
 }
+
+variable "openai_account_name" {
+  type        = string
+  description = "Azure OpenAI (Cognitive Services) account name."
+}
+
+variable "openai_chat_deployment_name" {
+  type    = string
+  default = "gpt-41-mini"
+}
+
+variable "openai_chat_model_name" {
+  type    = string
+  default = "gpt-4.1-mini"
+}
+
+variable "openai_chat_model_version" {
+  type    = string
+  default = "2025-04-14"
+}
+
+variable "openai_chat_sku_capacity" {
+  type    = number
+  default = 10
+}
+
+variable "openai_embeddings_deployment_name" {
+  type    = string
+  default = "text-embedding-ada-002"
+}
+
+variable "openai_embeddings_model_name" {
+  type    = string
+  default = "text-embedding-ada-002"
+}
+
+variable "openai_embeddings_model_version" {
+  type    = string
+  default = "2"
+}
+
+variable "openai_embeddings_sku_capacity" {
+  type    = number
+  default = 8
+}
+
+variable "storage_account_name" {
+  type        = string
+  description = "Storage account name for Products blob storage (product images)."
+}
+
+variable "storage_container_name" {
+  type    = string
+  default = "product-images"
+}

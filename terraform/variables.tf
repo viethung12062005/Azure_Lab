@@ -110,6 +110,16 @@ variable "sql_admin_username" {
   description = "SQL administrator username used only for bootstrap."
 }
 
+variable "openai_account_name" {
+  type        = string
+  description = "Azure OpenAI (Cognitive Services) account name."
+}
+
+variable "storage_account_name" {
+  type        = string
+  description = "Storage account name for Products blob storage (product images)."
+}
+
 variable "store_image_tag" {
   type        = string
   default     = "latest"

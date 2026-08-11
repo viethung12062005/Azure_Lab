@@ -26,6 +26,18 @@ output "containerapps_environment_id" {
   value = module.core.containerapps_environment_id
 }
 
+output "openai_endpoint" {
+  value = module.core.openai_endpoint
+}
+
+output "storage_account_name" {
+  value = module.core.storage_account_name
+}
+
+output "storage_primary_blob_endpoint" {
+  value = module.core.storage_primary_blob_endpoint
+}
+
 output "store_managed_identity_client_id" {
   value = module.identities.store_managed_identity_client_id
 }

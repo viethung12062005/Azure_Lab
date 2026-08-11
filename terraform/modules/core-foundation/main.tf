@@ -71,3 +71,68 @@ resource "azurerm_container_app_environment" "main" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   tags                       = var.tags
 }
+
+resource "azurerm_cognitive_account" "openai" {
+  name                          = var.openai_account_name
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.main.name
+  kind                          = "OpenAI"
+  sku_name                      = "S0"
+  custom_subdomain_name         = var.openai_account_name
+  public_network_access_enabled = true
+  local_auth_enabled            = false
+  tags                          = var.tags
+}
+
+resource "azurerm_cognitive_deployment" "chat" {
+  name                 = var.openai_chat_deployment_name
+  cognitive_account_id = azurerm_cognitive_account.openai.id
+
+  model {
+    format  = "OpenAI"
+    name    = var.openai_chat_model_name
+    version = var.openai_chat_model_version
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = var.openai_chat_sku_capacity
+  }
+}
+
+resource "azurerm_cognitive_deployment" "embeddings" {
+  name                 = var.openai_embeddings_deployment_name
+  cognitive_account_id = azurerm_cognitive_account.openai.id
+
+  model {
+    format  = "OpenAI"
+    name    = var.openai_embeddings_model_name
+    version = var.openai_embeddings_model_version
+  }
+
+  sku {
+    name     = "Standard"
+    capacity = var.openai_embeddings_sku_capacity
+  }
+
+  # Cognitive Services rejects concurrent deployment writes on the same account.
+  depends_on = [azurerm_cognitive_deployment.chat]
+}
+
+resource "azurerm_storage_account" "products" {
+  name                            = var.storage_account_name
+  resource_group_name             = azurerm_resource_group.main.name
+  location                        = var.location
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
+  min_tls_version                 = "TLS1_2"
+  https_traffic_only_enabled      = true
+  allow_nested_items_to_be_public = false
+  tags                            = var.tags
+}
+
+resource "azurerm_storage_container" "product_images" {
+  name                  = var.storage_container_name
+  storage_account_name  = azurerm_storage_account.products.name
+  container_access_type = "private"
+}
