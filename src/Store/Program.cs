@@ -10,8 +10,14 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<ICheckoutService, CheckoutService>();
 
-var productServiceBaseAddress = builder.Configuration["ProductService:BaseAddress"]
-    ?? builder.Configuration["ProductEndpoint"]
+// String.IsNullOrWhiteSpace, not ??: an empty-string value (e.g. a blank placeholder
+// left in appsettings.json) must still fall through to the next source, not shadow it.
+var candidateBaseAddresses = new[]
+{
+    builder.Configuration["ProductService:BaseAddress"],
+    builder.Configuration["ProductEndpoint"],
+};
+var productServiceBaseAddress = candidateBaseAddresses.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a))
     ?? string.Empty;
 
 if (string.IsNullOrWhiteSpace(productServiceBaseAddress))
