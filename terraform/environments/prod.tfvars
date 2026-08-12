@@ -29,3 +29,8 @@ additional_tags = {
 }
 
 admin_object_id = "691b0002-2314-498a-b55d-9cd84cc517d9"
+
+alert_email           = "viethung12062005@gmail.com"
+monthly_budget_amount = 20
+budget_start_date     = "2026-08-01T00:00:00Z"
+budget_end_date       = "2027-08-01T00:00:00Z"

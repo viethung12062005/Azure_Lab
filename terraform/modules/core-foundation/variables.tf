@@ -121,3 +121,35 @@ variable "storage_container_name" {
   type    = string
   default = "product-images"
 }
+
+variable "sql_backup_retention_days" {
+  type        = number
+  default     = 7
+  description = "Point-in-time restore retention window (days) for the SQL database."
+}
+
+variable "subscription_id" {
+  type        = string
+  description = "Subscription id, used to scope the Service Health activity log alert."
+}
+
+variable "alert_email" {
+  type        = string
+  description = "Email address for cost budget and Service Health alert notifications."
+}
+
+variable "monthly_budget_amount" {
+  type        = number
+  default     = 20
+  description = "Monthly cost budget (subscription currency) for this environment's resource group."
+}
+
+variable "budget_start_date" {
+  type        = string
+  description = "Budget time_period start date (RFC3339), must align to the first of a month."
+}
+
+variable "budget_end_date" {
+  type        = string
+  description = "Budget time_period end date (RFC3339). Azure requires an explicit end date; extend this periodically."
+}

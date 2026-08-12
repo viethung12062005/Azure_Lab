@@ -125,6 +125,27 @@ variable "openai_resource_group_name" {
   description = "Resource group of the existing Azure OpenAI account."
 }
 
+variable "alert_email" {
+  type        = string
+  description = "Email address for cost budget and Service Health alert notifications."
+}
+
+variable "monthly_budget_amount" {
+  type        = number
+  default     = 20
+  description = "Monthly cost budget (subscription currency) for this environment's resource group."
+}
+
+variable "budget_start_date" {
+  type        = string
+  description = "Budget time_period start date (RFC3339), must align to the first of a month."
+}
+
+variable "budget_end_date" {
+  type        = string
+  description = "Budget time_period end date (RFC3339). Azure requires an explicit end date; extend this periodically."
+}
+
 variable "storage_account_name" {
   type        = string
   description = "Storage account name for Products blob storage (product images)."

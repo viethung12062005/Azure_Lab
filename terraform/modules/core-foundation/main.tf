@@ -54,6 +54,15 @@ resource "azurerm_mssql_database" "main" {
   auto_pause_delay_in_minutes = var.sql_auto_pause_delay_in_minutes
   min_capacity                = var.sql_min_capacity
   tags                        = merge(var.tags, { BackupRequired = "true" })
+
+  # Point-in-time restore window. Azure SQL backs this up automatically; this
+  # just makes the retention explicit/documented instead of relying on the
+  # implicit platform default. No long-term retention (weekly/monthly/yearly)
+  # policy is configured, since Azure Backup Vault storage is an extra cost
+  # not justified for a student-subscription lab environment.
+  short_term_retention_policy {
+    retention_days = var.sql_backup_retention_days
+  }
 }
 
 resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
@@ -132,4 +141,72 @@ resource "azurerm_storage_container" "product_images" {
   name                  = var.storage_container_name
   storage_account_id    = azurerm_storage_account.products.id
   container_access_type = "private"
+}
+
+resource "azurerm_monitor_action_group" "alerts" {
+  name                = "ag-${var.resource_group_name}"
+  resource_group_name = azurerm_resource_group.main.name
+  short_name          = "eshoplite"
+  tags                = var.tags
+
+  email_receiver {
+    name          = "admin"
+    email_address = var.alert_email
+  }
+}
+
+# Azure for Students has a fixed, small credit balance ($100) with no
+# guardrail of its own, so a budget alert is the cheapest way to notice a
+# runaway resource before the whole subscription is exhausted.
+resource "azurerm_consumption_budget_resource_group" "monthly" {
+  name              = "budget-${var.resource_group_name}"
+  resource_group_id = azurerm_resource_group.main.id
+
+  amount     = var.monthly_budget_amount
+  time_grain = "Monthly"
+
+  time_period {
+    start_date = var.budget_start_date
+    end_date   = var.budget_end_date
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 80
+    operator       = "GreaterThan"
+    threshold_type = "Actual"
+    contact_emails = [var.alert_email]
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 100
+    operator       = "GreaterThan"
+    threshold_type = "Forecasted"
+    contact_emails = [var.alert_email]
+  }
+}
+
+# Azure Service Health incidents/planned maintenance for this subscription and
+# region — the "cảnh báo sức khỏe dịch vụ" half of the Phase 5 requirement,
+# distinct from application-level monitoring (which Log Analytics already covers).
+resource "azurerm_monitor_activity_log_alert" "service_health" {
+  name                = "alert-servicehealth-${var.resource_group_name}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = "global"
+  scopes              = ["/subscriptions/${var.subscription_id}"]
+  description         = "Azure Service Health incidents or maintenance affecting this subscription/region."
+
+  criteria {
+    category = "ServiceHealth"
+
+    service_health {
+      events    = ["Incident", "Maintenance"]
+      locations = ["Global", var.location]
+    }
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.alerts.id
+  }
 }

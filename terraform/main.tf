@@ -16,6 +16,11 @@ module "core" {
   openai_account_name            = var.openai_account_name
   openai_resource_group_name     = var.openai_resource_group_name
   storage_account_name           = var.storage_account_name
+  subscription_id                = data.azurerm_client_config.current.subscription_id
+  alert_email                    = var.alert_email
+  monthly_budget_amount          = var.monthly_budget_amount
+  budget_start_date              = var.budget_start_date
+  budget_end_date                = var.budget_end_date
 }
 
 module "identities" {
