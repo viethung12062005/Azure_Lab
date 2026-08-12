@@ -27,11 +27,12 @@ flowchart LR
 ```
 
 ## Features
-- [Azure App Service Environment](./docs/azure-appservice.md)
-- [Scenario documentation](./docs/README.md)
-- [Products API](./docs/products-api.md)
-- [Store UI](./docs/store-ui.md)
-- [Azure OpenAI](./docs/azure-openai.md)
+- Azure App Service / Container Apps environment
+- Products API
+- Store UI
+- Azure OpenAI (chat + embeddings)
+
+Detailed architecture, infrastructure, and deployment docs are kept as local-only reference and are not part of this repository.
 
 ## Prerequisites
 - .NET 10 SDK

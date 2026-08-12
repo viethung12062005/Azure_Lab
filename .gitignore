@@ -53,3 +53,8 @@ appsettings.*.local.json
 
 # Azure Developer CLI local state
 .azure/
+
+# Implementation/deployment docs kept locally for reference only — not for
+# the public remote (contains infra naming, deployment steps, real resource
+# IDs). Files still exist on disk; this just keeps git from tracking them.
+/docs/
