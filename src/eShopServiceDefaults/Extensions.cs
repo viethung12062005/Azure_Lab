@@ -42,11 +42,15 @@ namespace Microsoft.Extensions.Hosting
                 http.AddServiceDiscovery();
             });
 
-            // Uncomment the following to restrict the allowed schemes for service discovery.
-            // builder.Services.Configure<ServiceDiscoveryOptions>(options =>
-            // {
-            //     options.AllowedSchemes = ["https"];
-            // });
+            // Container Apps' internal-only service-to-service calls (e.g. Store -> "http://products")
+            // are plain HTTP inside the environment; TLS is already terminated at the ingress boundary.
+            // Without this, AddServiceDiscovery() upgrades bare hostnames to "https+http://..." and tries
+            // HTTPS first, which hangs against the short internal hostname until the resilience handler's
+            // timeout kills it (observed: every call took exactly the configured 2-minute AttemptTimeout).
+            builder.Services.Configure<ServiceDiscoveryOptions>(options =>
+            {
+                options.AllowedSchemes = ["http"];
+            });
 
             return builder;
         }
