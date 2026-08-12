@@ -110,6 +110,11 @@ variable "sql_admin_username" {
   description = "SQL administrator username used only for bootstrap."
 }
 
+variable "admin_object_id" {
+  type        = string
+  description = "Azure AD object id of the human administrator granted Key Vault Secrets Officer. Fixed on purpose so it doesn't flip between whoever last ran terraform (human vs. CI service principal)."
+}
+
 variable "openai_account_name" {
   type        = string
   description = "Name of the existing Azure OpenAI (Cognitive Services) account to deploy models into (shared across environments due to subscription account quota)."

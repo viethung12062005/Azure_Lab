@@ -38,7 +38,10 @@ resource "random_password" "sql_admin" {
 resource "azurerm_role_assignment" "terraform_key_vault_secrets_officer" {
   scope                = module.core.key_vault_id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = data.azurerm_client_config.current.object_id
+  # A fixed object id, not data.azurerm_client_config.current.object_id: that value tracks
+  # whoever happens to run terraform, so a human apply followed by a CI apply (or vice versa)
+  # replaces this role assignment each time and revokes the other caller's access.
+  principal_id = var.admin_object_id
 }
 
 resource "azurerm_role_assignment" "products_key_vault_secrets_user" {
@@ -89,6 +92,10 @@ module "products_app" {
       AzureOpenAIDeploymentName           = module.core.openai_chat_deployment_name
       AzureOpenAIEmbeddingsDeploymentName = module.core.openai_embeddings_deployment_name
       AzureBlobStorageEndpoint            = module.core.storage_primary_blob_endpoint
+      # DefaultAzureCredential cannot reliably auto-detect which identity to use when a
+      # user-assigned identity (rather than system-assigned) is attached; without this,
+      # ManagedIdentityCredential fails with "Unable to load the proper Managed Identity".
+      AZURE_CLIENT_ID = module.identities.products_managed_identity_client_id
     },
     var.products_environment_variables,
   )

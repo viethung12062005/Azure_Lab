@@ -27,3 +27,5 @@ sql_admin_username = "sqladminuser"
 additional_tags = {
   ReleaseTrack = "production"
 }
+
+admin_object_id = "691b0002-2314-498a-b55d-9cd84cc517d9"
