@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -22,8 +21,6 @@ namespace Microsoft.Extensions.Hosting
 
             builder.AddDefaultHealthChecks();
 
-            builder.Services.AddServiceDiscovery();
-
             builder.Services.ConfigureHttpClientDefaults(http =>
             {
                 // Turn on resilience by default
@@ -38,18 +35,15 @@ namespace Microsoft.Extensions.Hosting
                     config.Retry.MaxRetryAttempts = 1;
                 });
 
-                // Turn on service discovery by default
-                http.AddServiceDiscovery();
-            });
-
-            // Container Apps' internal-only service-to-service calls (e.g. Store -> "http://products")
-            // are plain HTTP inside the environment; TLS is already terminated at the ingress boundary.
-            // Without this, AddServiceDiscovery() upgrades bare hostnames to "https+http://..." and tries
-            // HTTPS first, which hangs against the short internal hostname until the resilience handler's
-            // timeout kills it (observed: every call took exactly the configured 2-minute AttemptTimeout).
-            builder.Services.Configure<ServiceDiscoveryOptions>(options =>
-            {
-                options.AllowedSchemes = ["http"];
+                // Deliberately NOT calling http.AddServiceDiscovery() here. This deployment never runs
+                // through the Aspire AppHost in production (Container Apps is provisioned by Terraform,
+                // with a static "http://products" env var), so there is no service endpoint
+                // configuration for it to resolve. Instead it rewrites the explicit http:// BaseAddress
+                // into "https+http://products" and tries HTTPS first — which hangs against the short
+                // internal Container Apps hostname until the resilience handler's timeout kills it
+                // (observed: every call took exactly the configured 2-minute AttemptTimeout, confirmed
+                // via Log Analytics). Setting ServiceDiscoveryOptions.AllowedSchemes = ["http"] did not
+                // stop this, so the handler itself is removed rather than configured.
             });
 
             return builder;
